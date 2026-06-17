@@ -1,7 +1,6 @@
 import sys
 import os
 import psycopg2
-from scraper.helper import get_db_connection
 
 def main():
     db_url = os.environ.get("DATABASE_URL")
