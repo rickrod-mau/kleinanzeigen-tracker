@@ -105,101 +105,78 @@ SET category_name = EXCLUDED.category_name, category_url = EXCLUDED.category_url
 
 -- Seed Search Keywords
 INSERT INTO search_keywords (keyword, active) VALUES
-    ('iphone', true),
-    ('herren', true),
-    ('uhr', true),
-    ('frau', true),
-    ('baby', true),
-    ('kinder', true),
-    ('sneaker', true),
-    ('playstation 5', true),
-    ('sofa', true),
-    ('fahrrad', true),
-    ('nike', true),
-    ('lego', true),
-    ('macbook', true),
-    ('e-scooter', true),
-    ('kinderwagen', true),
-    ('schuhe', true),
-    ('nintendo', true),
-    ('dyson', true),
-    ('thermomix', true),
-    ('vespa', true),
-    ('rolex', true),
-    ('e-bike', true),
-    ('kaffeevollautomat', true),
-    ('brennholz', true),
-    ('vintage', true),
-    ('gartenmoebel', true),
-    ('ipad', true),
-    ('playstation 4', true),
-    ('bmw', true),
-    ('gardena', true),
-    ('fritzbox', true),
-
-    -- Electronics & Tech --
-    ('samsung galaxy', true),
+    -- Wearables & Smart Tech
+    ('apple watch', true),
+    ('galaxy watch', true),
+    ('garmin', true),
+    ('huawei', true),
     ('airpods', true),
+    ('jbl', true),
+    
+    -- Tech & Gadgets
+    ('iphone', true),
+    ('macbook', true),
+    ('ipad', true),
     ('playstation', true),
-    ('xbox', true),
-    ('fernseher', true),
-    ('laptop', true),
-    ('drucker', true),
-    ('kamera', true),
-    ('drohne', true),
-    ('drone', true),
-    ('kindle', true),
-    ('sonos', true),
-
-    -- Vehicles & Mobility --
-    ('volkswagen', true),
-    ('mercedes', true),
-    ('motorrad', true),
-    ('rennrad', true),
-    ('mountainbike', true),
-    ('anhänger', true),
-    ('roller', true),
-
-    -- Furniture & Home --
-    ('ikea', true),
-    ('schrank', true),
-    ('küche', true),
+    ('playstation 5', true),
+    ('nintendo switch', true),
+    ('gameboy', true),
+    ('dron', true),
+    ('dji', true),
+    ('steam deck', true),
+    
+    -- Household & Electronics (German popular brands)
+    ('staubsauger', true),
     ('waschmaschine', true),
     ('kühlschrank', true),
-    ('lampe', true),
-    ('bett', true),
-    ('esstisch', true),
-
-    -- Kids & Family --
-    ('laufrad', true),
-    ('babywippe', true),
-    ('kinderfahrrad', true),
-    ('spielzeugküche', true),
-
-    -- Fashion & Accessories --
+    ('Bosch', true),
+    ('Miele', true),
+    ('Siemens', true),
+    ('Braun', true),
+    ('ikea', true),
+    ('sofa', true),
+    
+    -- Fashion, Shoes & Brands
+    ('nike', true),
     ('adidas', true),
+    ('puma', true),
     ('jordan', true),
-    ('gucci', true),
-    ('winterjacke', true),
-
-    -- Leisure & Hobbies --
-    ('klavier', true),
-    ('surfboard', true),
-    ('angelrute', true),
-    ('zelt', true),
+    ('air force 1', true),
+    ('samba', true),
+    ('gazelle', true),
+    ('timberland', true),
+    ('schuhe', true),
+    ('H&M', true),
+    ('Zara', true),
+    ('vintage', true),
+    ('herren', true),
+    ('frau', true),
+    ('uhr', true),
+    
+    -- Teenager Trends & Streetwear
+    ('supreme', true),
+    ('yeezy', true),
+    ('stussy', true),
+    ('carhartt', true),
+    ('crocs', true),
+    ('pokemon', true),
+    ('anime', true),
+    ('manga', true),
+    ('funko pop', true),
+    
+    -- Mobility, Outdoor & Sports
+    ('fahrrad', true),
+    ('trekkingrad', true),
+    ('rennrad', true),
     ('snowboard', true),
-    ('sauna', true),
-
-    -- Garden & Construction --
-    ('rasenmäher', true),
-    ('holz', true),
-    ('pflastersteine', true),
-    ('werkzeug', true),
-
-    -- Books, Collectibles --
-    ('samsung', true),
-    ('comic', true),
-    ('modelleisenbahn', true)
+    ('zelt', true),
+    ('schlafsack', true),
+    ('baby', true),
+    
+    -- Gaming & Collectibles
+    ('lego', true),
+    ('fifa', true),
+    ('rolex', true)
 ON CONFLICT (keyword) DO NOTHING;
 
 

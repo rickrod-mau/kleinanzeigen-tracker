@@ -23,6 +23,16 @@ ALTER TABLE listings ADD COLUMN IF NOT EXISTS reposted_as_id VARCHAR(50) REFEREN
 ALTER TABLE listings ADD COLUMN IF NOT EXISTS thumbnail_url TEXT;
 ```
 
+### C. Updating Search Keywords
+To update the search keywords in your cloud database to the new curated list (adding trendiest products and eliminating unwanted ones like dyson and thermomix), run this command:
+```bash
+python scripts/apply_keyword_update.py "postgresql://<username>:<password>@<host>:<port>/defaultdb?sslmode=require"
+```
+Or if you have the `DATABASE_URL` environment variable set:
+```bash
+python scripts/apply_keyword_update.py
+```
+
 ---
 
 ## 2. GitHub Actions Automation
