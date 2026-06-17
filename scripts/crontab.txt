@@ -1,0 +1,8 @@
+# Example Crontab Entries for Kleinanzeigen Market Activity Tracker
+# Access using 'crontab -e' in Linux / macOS / WSL
+
+# Option 1: Run daily at 03:15 AM (Recommended)
+15 3 * * * /bin/bash /absolute/path/to/kleinanzeigen-tracker/scripts/run_tracker.sh >/dev/null 2>&1
+
+# Option 2: Run every 6 hours (00:15, 06:15, 12:15, 18:15)
+15 */6 * * * /bin/bash /absolute/path/to/kleinanzeigen-tracker/scripts/run_tracker.sh >/dev/null 2>&1

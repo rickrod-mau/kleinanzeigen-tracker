@@ -1,0 +1,44 @@
+name: Kleinanzeigen Tracker Scraper
+
+on:
+  schedule:
+    # 1. Low Traffic (Midnight - 7 AM local / 22:00 - 05:00 UTC) -> Run once at 04:00 AM local (02:00 UTC)
+    - cron: '0 2 * * *'
+    # 2. Moderate Traffic (7 AM - 5 PM local / 05:00 - 15:00 UTC) -> Run every 2 hours (06:00, 08:00, 10:00, 12:00, 14:00 UTC)
+    - cron: '0 6,8,10,12,14 * * *'
+    # 3. Peak Traffic / Prime Time (5 PM - 11 PM local / 15:00 - 21:00 UTC) -> Run hourly (15:00, 16:00, 17:00, 18:00, 19:00, 20:00, 21:00 UTC)
+    - cron: '0 15,16,17,18,19,20,21 * * *'
+  workflow_dispatch: # Allows manual trigger from the GitHub website
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run Scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+        run: |
+          # We set the python path to include the scraper directory for imports
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/scraper
+          python scraper/scrape_categories.py
+          python scraper/scrape_keywords.py
