@@ -25,3 +25,9 @@ FROM listings
 WHERE status = 'sold' AND last_seen_at > first_seen_at
 GROUP BY post_day_of_week, post_hour
 ORDER BY avg_hours_to_sell ASC;
+
+-- 3. Ensure columns are TEXT type to avoid VARCHAR(255) value too long errors
+ALTER TABLE listings ALTER COLUMN listing_url TYPE TEXT;
+ALTER TABLE listings ALTER COLUMN title TYPE TEXT;
+ALTER TABLE listings ALTER COLUMN thumbnail_url TYPE TEXT;
+ALTER TABLE listings ALTER COLUMN location TYPE TEXT;
