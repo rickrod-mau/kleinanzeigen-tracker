@@ -3,7 +3,7 @@ import re
 import traceback
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
-from helper import get_db_connection, make_request, logger
+from helper import get_db_connection, make_request, logger, send_deal_alert
 
 def parse_price(price_str):
     """
@@ -215,6 +215,27 @@ def scrape_category_page(category_name, category_url, num_pages=1):
                     if img_el:
                         thumbnail_url = img_el.get('src') or img_el.get('data-src')
                     
+                    # 7. Extract seller rating / badges
+                    seller_rating = None
+                    top_el = item.select_one('.aditem-main--top')
+                    if top_el:
+                        for el in top_el.select('span, div'):
+                            text = el.text.strip()
+                            if any(kw in text.lower() for kw in ['zufriedenheit', 'freundlich', 'zuverlässig', 'top', 'ok', 'naja']):
+                                text_clean = re.sub(r'\s+', ' ', text).strip()
+                                if text_clean and len(text_clean) < 50:
+                                    seller_rating = text_clean
+                                    break
+                    
+                    if not seller_rating:
+                        for el in item.select('[class*="user-badge"], [class*="user-satisfaction"], [class*="user-rating"]'):
+                            text = el.text.strip()
+                            if text:
+                                text_clean = re.sub(r'\s+', ' ', text).strip()
+                                if text_clean and len(text_clean) < 50:
+                                    seller_rating = text_clean
+                                    break
+                    
                     parsed_listings.append({
                         'listing_id': listing_id,
                         'title': title,
@@ -222,7 +243,8 @@ def scrape_category_page(category_name, category_url, num_pages=1):
                         'location': location,
                         'listing_url': listing_url,
                         'is_topad': is_topad,
-                        'thumbnail_url': thumbnail_url
+                        'thumbnail_url': thumbnail_url,
+                        'seller_rating': seller_rating
                     })
                     
                 except Exception as e:
@@ -323,8 +345,8 @@ def main():
                         """
                         INSERT INTO listings (
                             listing_id, category_id, title, price, location, listing_url, 
-                            first_seen_at, last_seen_at, status, last_position, is_topad, thumbnail_url
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            first_seen_at, last_seen_at, status, last_position, is_topad, thumbnail_url, seller_rating
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (listing_id) DO UPDATE SET
                             title = EXCLUDED.title,
                             price = EXCLUDED.price,
@@ -333,12 +355,13 @@ def main():
                             status = 'active',
                             last_position = EXCLUDED.last_position,
                             is_topad = EXCLUDED.is_topad,
-                            thumbnail_url = EXCLUDED.thumbnail_url;
+                            thumbnail_url = EXCLUDED.thumbnail_url,
+                            seller_rating = EXCLUDED.seller_rating;
                         """,
                         (
                             listing['listing_id'], cat_id, listing['title'], listing['price'],
                             listing['location'], listing['listing_url'], datetime.now(timezone.utc), datetime.now(timezone.utc),
-                            'active', listing['last_position'], listing['is_topad'], listing['thumbnail_url']
+                            'active', listing['last_position'], listing['is_topad'], listing['thumbnail_url'], listing['seller_rating']
                         )
                     )
                 
@@ -461,7 +484,62 @@ def main():
             status = "partial"
         else:
             status = "success"
+        # Deal Hunter Alert Bot logic
+        try:
+            logger.info("Starting Deal Hunter Bot analysis...")
+            cur.execute(
+                """
+                SELECT k.keyword, rs.avg_price_sample
+                FROM search_keywords k
+                JOIN (
+                    SELECT DISTINCT ON (keyword_id) keyword_id, avg_price_sample
+                    FROM search_snapshots
+                    ORDER BY keyword_id, scraped_at DESC
+                ) rs ON k.id = rs.keyword_id
+                WHERE k.active = true AND rs.avg_price_sample IS NOT NULL;
+                """
+            )
+            keyword_averages = {row[0].lower(): float(row[1]) for row in cur.fetchall()}
+            logger.info(f"Loaded {len(keyword_averages)} active keyword average prices for comparison.")
             
+            if keyword_averages:
+                cur.execute(
+                    """
+                    SELECT listing_id, title, price, location, listing_url, thumbnail_url, seller_rating
+                    FROM listings
+                    WHERE first_seen_at >= %s AND price IS NOT NULL AND status = 'active';
+                    """,
+                    (start_time,)
+                )
+                new_listings = cur.fetchall()
+                logger.info(f"Analyzing {len(new_listings)} new listings for potential deals.")
+                
+                threshold_val = os.environ.get("DEAL_THRESHOLD")
+                try:
+                    deal_threshold = float(threshold_val) if threshold_val else 0.70
+                except ValueError:
+                    deal_threshold = 0.70
+                    
+                for l_id, l_title, l_price, l_loc, l_url, l_thumb, l_rating in new_listings:
+                    l_price_float = float(l_price)
+                    for kw, avg_price in keyword_averages.items():
+                        if re.search(r'\b' + re.escape(kw) + r'\b', l_title.lower()):
+                            if l_price_float <= avg_price * deal_threshold:
+                                listing_dict = {
+                                    'listing_id': l_id,
+                                    'title': l_title,
+                                    'price': l_price_float,
+                                    'location': l_loc,
+                                    'listing_url': l_url,
+                                    'thumbnail_url': l_thumb,
+                                    'seller_rating': l_rating
+                                }
+                                send_deal_alert(listing_dict, kw, avg_price)
+                                break
+        except Exception as deal_err:
+            logger.error(f"Error executing Deal Hunter logic: {str(deal_err)}")
+            traceback.print_exc()
+
         end_time = datetime.now(timezone.utc)
         cur.execute(
             """

@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS listings (
     last_position INTEGER,
     is_topad BOOLEAN DEFAULT FALSE NOT NULL,
     reposted_as_id VARCHAR(50) REFERENCES listings(listing_id) ON DELETE SET NULL,
-    thumbnail_url TEXT
+    thumbnail_url TEXT,
+    seller_rating VARCHAR(50)
 );
 
 -- Index for repeated titles search
@@ -284,3 +285,26 @@ SELECT
     error_message
 FROM scrape_runs
 ORDER BY started_at DESC;
+
+-- 7. Best time to post analysis view
+CREATE OR REPLACE VIEW v_best_time_to_post_analysis AS
+SELECT 
+    EXTRACT(DOW FROM first_seen_at) AS post_day_of_week,
+    CASE EXTRACT(DOW FROM first_seen_at)
+        WHEN 0 THEN 'Sunday'
+        WHEN 1 THEN 'Monday'
+        WHEN 2 THEN 'Tuesday'
+        WHEN 3 THEN 'Wednesday'
+        WHEN 4 THEN 'Thursday'
+        WHEN 5 THEN 'Friday'
+        WHEN 6 THEN 'Saturday'
+    END AS post_day_name,
+    EXTRACT(HOUR FROM first_seen_at) AS post_hour,
+    COUNT(*) AS total_sold_listings,
+    ROUND(AVG(EXTRACT(EPOCH FROM (last_seen_at - first_seen_at)) / 3600.0)::NUMERIC, 2) AS avg_hours_to_sell,
+    ROUND(MIN(EXTRACT(EPOCH FROM (last_seen_at - first_seen_at)) / 3600.0)::NUMERIC, 2) AS min_hours_to_sell,
+    ROUND(MAX(EXTRACT(EPOCH FROM (last_seen_at - first_seen_at)) / 3600.0)::NUMERIC, 2) AS max_hours_to_sell
+FROM listings
+WHERE status = 'sold' AND last_seen_at > first_seen_at
+GROUP BY post_day_of_week, post_hour
+ORDER BY avg_hours_to_sell ASC;

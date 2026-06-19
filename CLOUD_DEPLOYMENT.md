@@ -38,9 +38,22 @@ python scripts/apply_keyword_update.py
 ## 2. GitHub Actions Automation
 
 ### A. Secret Configuration
-Add the following repository secret in GitHub under **Settings > Secrets and variables > Actions**:
-* **Name:** `DATABASE_URL`
-* **Value:** `postgresql://<username>:<password>@<host>:<port>/defaultdb?sslmode=require`
+To fully unlock the capabilities of the tracker, add the following repository secrets in GitHub under **Settings > Secrets and variables > Actions** (or set them in your local terminal environment):
+
+1. **Database Connection:**
+   * **Name:** `DATABASE_URL`
+   * **Value:** `postgresql://<username>:<password>@<host>:<port>/defaultdb?sslmode=require`
+
+2. **Proxy Rotation (Akamai Bypass):**
+   * **Name:** `PROXY_URL`
+   * **Value:** A single rotating proxy URL or a comma-separated list of proxies (e.g., `http://username:password@proxy1.com:1234,http://username:password@proxy2.com:5678`). The scraper will cycle through these to avoid blocks.
+
+3. **Deal Hunter Bot Webhooks (Optional - Configure any or all):**
+   * **Name:** `DISCORD_WEBHOOK_URL` -> Link for triggering Discord channel embeds.
+   * **Name:** `TELEGRAM_BOT_TOKEN` -> Bot token from BotFather.
+   * **Name:** `TELEGRAM_CHAT_ID` -> Target chat or channel ID.
+   * **Name:** `SLACK_WEBHOOK_URL` -> Incoming Webhook URL for your Slack workspace.
+   * **Name:** `DEAL_THRESHOLD` -> The discount threshold decimal (e.g. `0.70` triggers alerts for listings 30%+ below average; `0.80` triggers for 20%+ off. Defaults to `0.70`).
 
 ### B. Trigger & Schedule
 * The workflow file is located at `.github/workflows/scrape.yml`.
@@ -133,4 +146,20 @@ SELECT
 FROM v_sold_listings_analysis
 GROUP BY sales_classification;
 ```
+
+### 6. Best Time to Post Analytics View
+To identify which days of the week and hours of the day listings are sold fastest, you can query the `v_best_time_to_post_analysis` view:
+
+```sql
+SELECT 
+    post_day_name, 
+    post_hour, 
+    total_sold_listings, 
+    avg_hours_to_sell
+FROM v_best_time_to_post_analysis
+ORDER BY avg_hours_to_sell ASC
+LIMIT 10;
+```
+This query reveals the top 10 fastest-selling combinations of posting times, allowing you to optimize your own sales listings.
+
 
